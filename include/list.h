@@ -33,10 +33,10 @@ void list_push(list_t *list, void *p);
 void list_push_all(list_t *list, void **p);
 
 /// Remove element from the list, frees element with fn.
-void list_remove(list_t *list, size_t idx, list_elem_free_fn elem_free);
+void rtl433_list_remove(list_t *list, size_t idx, list_elem_free_fn elem_free);
 
 /// Clear the list, frees each element with fn, does not free backing or list itself.
-void list_clear(list_t *list, list_elem_free_fn elem_free);
+void rtl433_list_clear(list_t *list, list_elem_free_fn elem_free);
 
 /// Clear the list, free backing, does not free list itself.
 void list_free_elems(list_t *list, list_elem_free_fn elem_free);

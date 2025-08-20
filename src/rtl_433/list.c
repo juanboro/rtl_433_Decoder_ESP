@@ -45,7 +45,7 @@ void list_push_all(list_t *list, void **p)
         list_push(list, *iter);
 }
 
-void list_remove(list_t *list, size_t idx, list_elem_free_fn elem_free)
+void rtl433_list_remove(list_t *list, size_t idx, list_elem_free_fn elem_free)
 {
     if (idx >= list->len) {
         return; // report error?
@@ -63,7 +63,7 @@ void list_remove(list_t *list, size_t idx, list_elem_free_fn elem_free)
     // ignore "call to function _free through pointer to incorrect function type"
     __attribute__((no_sanitize("undefined")))
 #endif
-void list_clear(list_t *list, list_elem_free_fn elem_free)
+void rtl433_list_clear(list_t *list, list_elem_free_fn elem_free)
 {
     if (elem_free) {
         for (size_t i = 0; i < list->len; ++i) { // list might contain NULLs
@@ -78,7 +78,7 @@ void list_clear(list_t *list, list_elem_free_fn elem_free)
 
 void list_free_elems(list_t *list, list_elem_free_fn elem_free)
 {
-    list_clear(list, elem_free);
+    rtl433_list_clear(list, elem_free);
     free(list->elems);
     list->elems = NULL;
     list->size  = 0;
