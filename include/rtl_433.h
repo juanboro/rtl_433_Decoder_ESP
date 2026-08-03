@@ -5,26 +5,24 @@
 #ifndef INCLUDE_RTL_433_H_
 #define INCLUDE_RTL_433_H_
 
-#include "list.h"
-#include <signal.h>
 #include <stdint.h>
+#include "list.h"
 #include <time.h>
+#include <signal.h>
 
-#define DEFAULT_SAMPLE_RATE 250000
-#define DEFAULT_FREQUENCY 433920000
-#define DEFAULT_HOP_TIME (60 * 10)
-#define DEFAULT_ASYNC_BUF_NUMBER                                               \
-  0 // Force use of default value (librtlsdr default: 15)
-#define DEFAULT_BUF_LENGTH (16 * 32 * 512) // librtlsdr default
+#define DEFAULT_SAMPLE_RATE     250000
+#define DEFAULT_FREQUENCY       433920000
+#define DEFAULT_HOP_TIME        (60*10)
+#define DEFAULT_ASYNC_BUF_NUMBER    0 // Force use of default value (librtlsdr default: 15)
+#define DEFAULT_BUF_LENGTH      (16 * 32 * 512) // librtlsdr default
 #define FSK_PULSE_DETECTOR_LIMIT 800000000
 
-#define MINIMAL_BUF_LENGTH 512
-#define MAXIMAL_BUF_LENGTH (256 * 16384)
-#define SIGNAL_GRABBER_BUFFER (12 * DEFAULT_BUF_LENGTH)
-#define MAX_FREQS 32
+#define MINIMAL_BUF_LENGTH      512
+#define MAXIMAL_BUF_LENGTH      (256 * 16384)
+#define SIGNAL_GRABBER_BUFFER   (12 * DEFAULT_BUF_LENGTH)
+#define MAX_FREQS               32
 
-#define INPUT_LINE_MAX                                                         \
-  8192 /**< enough for a complete textual bitbuffer (25*256) */
+#define INPUT_LINE_MAX 8192 /**< enough for a complete textual bitbuffer (25*256) */
 
 struct sdr_dev;
 struct r_device;
@@ -73,12 +71,13 @@ typedef struct r_cfg {
   list_t in_files;
   char const *in_filename;
   int in_replay;
-  volatile sig_atomic_t hop_now;
-  volatile sig_atomic_t exit_async;
-  volatile sig_atomic_t exit_code; ///< 0=no err, 1=params or cmd line err,
-  2=sdr device read error, 3=usb init error, 5=USB error (reset), other=other
-  error int frequencies; int frequency_index; uint32_t frequency[MAX_FREQS];
-  uint32_t center_frequency;
+    volatile sig_atomic_t hop_now; ///< flag to cause channel hopping, async written by signal handler and push_sdr_flow()
+    volatile sig_atomic_t exit_async; ///< flag to cause exiting, async written by signal handler
+    volatile sig_atomic_t exit_code; ///< 0=no err, 1=params or cmd line err, 2=sdr device read error, 3=usb init error, 5=USB error (reset), other=other error
+    int frequencies;                 ///< The number of entries in the frequency hopping list.
+    int frequency_index;             ///< The current position in the frequency hopping list.
+    uint32_t frequency[MAX_FREQS];   ///< A list of hopping frequencies.
+    uint32_t center_frequency;       ///< The current center frequency of the live or file input.
   int fsk_pulse_detect_mode;
   int hop_times;
   int hop_time[MAX_FREQS];
@@ -87,14 +86,12 @@ typedef struct r_cfg {
   time_t stop_time;
   int after_successful_events_flag;
   uint32_t samp_rate;
-  uint64_t input_pos;
   uint32_t bytes_to_read;
   struct sdr_dev *dev;
   int grab_mode; ///< Signal grabber mode: 0=off, 1=all, 2=unknown, 3=known
   int raw_mode; ///< Raw pulses printing mode: 0=off, 1=all, 2=unknown, 3=known
   */
-  int verbosity; ///< 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders,
-                 ///< 4=trace decoding.
+    int verbosity; ///< 0=normal, 1=verbose, 2=verbose decoders, 3=debug decoders, 4=trace decoding.
   // int verbose_bits;
   conversion_mode_t conversion_mode;
   /*
@@ -127,11 +124,8 @@ typedef struct r_cfg {
 
   // int sr_execopen;
   // int watchdog; ///< SDR acquire stall watchdog
-  /* stats*/
-  // time_t frames_since; ///< stats start time
-  // unsigned frames_count; ///< stats counter for interval
-  // unsigned frames_fsk; ///< stats counter for interval
-  // unsigned frames_events; ///< stats counter for interval
+    /* sdr stats */
+  //  time_t sdr_since; ///< time of last SDR connect statistic
   // struct mg_mgr *mgr;
   //
   //  TODO: rtl_433_Decoder_ESP additions

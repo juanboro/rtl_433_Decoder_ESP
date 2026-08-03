@@ -60,6 +60,9 @@ static int account_event(r_device *device, bitbuffer_t *bits, char const *demod_
         decoder_log_bitbuffer(device, ret > 0 ? 1 : 2, demod_name, bits, device->name);
     }
 
+    // always reset the bitbuffer after accounting, so every slicer starts the next message clean
+    bitbuffer_clear(bits);
+
     return ret;
 }
 
@@ -251,7 +254,6 @@ int pulse_slicer_pcm(pulse_data_t const *pulses, r_device *device)
                 && (bits.bits_per_row[0] > 0 || bits.num_rows > 1)) { // Only if data has been accumulated
 
             events += account_event(device, &bits, __func__);
-            bitbuffer_clear(&bits);
         }
     } // for
     return events;
@@ -330,7 +332,6 @@ int pulse_slicer_ppm(pulse_data_t const *pulses, r_device *device)
                 && (bits.bits_per_row[0] > 0 || bits.num_rows > 1)) { // Only if data has been accumulated
 
             events += account_event(device, &bits, __func__);
-            bitbuffer_clear(&bits);
         }
     } // for pulses
     return events;
@@ -438,7 +439,6 @@ int pulse_slicer_pwm(pulse_data_t const *pulses, r_device *device)
                     || (pulses->gap[n] > s_reset)) // Long silence (OOK)
                 && (bits.num_rows > 0)) {                        // Only if data has been accumulated
             events += account_event(device, &bits, __func__);
-            bitbuffer_clear(&bits);
         }
         else if (s_gap > 0 && pulses->gap[n] > s_gap
                 && bits.num_rows > 0 && bits.bits_per_row[bits.num_rows - 1] > 0) {
@@ -510,7 +510,6 @@ int pulse_slicer_manchester_zerobit(pulse_data_t const *pulses, r_device *device
                     || (pulses->gap[n] > s_reset)) // Long silence (OOK)
                 && (bits.num_rows > 0)) {                        // Only if data has been accumulated
             events += account_event(device, &bits, __func__);
-            bitbuffer_clear(&bits);
             bitbuffer_add_bit(&bits, 0); // Prepare for new message with hardcoded 0
             time_since_last = 0;
         }
@@ -862,6 +861,60 @@ int pulse_slicer_osv1(pulse_data_t const *pulses, r_device *device)
                 bitbuffer_add_bit(&bits, 0);
         }
     }
+    return events;
+}
+
+int pulse_slicer_rzi(pulse_data_t const *pulses, r_device *device)
+{
+    float samples_per_us = pulses->sample_rate / 1.0e6f;
+
+    int s_short = device->short_width * samples_per_us;
+    int s_long  = device->long_width * samples_per_us;
+    int s_reset = device->reset_limit * samples_per_us;
+    int s_base  = s_long - s_short; // tail-high of a 0-bit's own period
+
+    // check for rounding to zero
+    if ((device->short_width > 0 && s_short <= 0)
+            || (device->long_width > 0 && s_long <= 0)
+            || (device->reset_limit > 0 && s_reset <= 0)) {
+        print_logf(LOG_WARNING, __func__, "sample rate too low for protocol %u \"%s\"", device->protocol_num, device->name);
+        return 0;
+    }
+
+    bitbuffer_clear(&bits);
+    int events = 0;
+    int at_start = 1; // true for the first pulse, and the first pulse after a reset
+
+    for (unsigned n = 0; n < pulses->num_pulses; ++n) {
+        // The high run since the last dip (or since the start of the
+        // message, at_start) counts consecutive 1-bits.
+        int high = pulses->pulse[n];
+        int ones = at_start
+                ? (high + s_long / 2) / s_long
+                : (high - s_base + s_long / 2) / s_long;
+        at_start = 0;
+        if (ones < 0) {
+            ones = 0;
+        }
+        for (int k = 0; k < ones; ++k) {
+            bitbuffer_add_bit(&bits, 1);
+        }
+
+        if (pulses->gap[n] > s_reset || n == pulses->num_pulses - 1) {
+            // End of message.
+            if (bits.bits_per_row[0] > 0) {
+                events += account_event(device, &bits, __func__);
+            }
+            bits = (bitbuffer_t){0};
+            at_start = 1;
+            continue;
+        }
+
+        // Any gap short of the reset limit is this coding's only kind of
+        // gap: the dip marking a 0-bit.
+        bitbuffer_add_bit(&bits, 0);
+    }
+
     return events;
 }
 
