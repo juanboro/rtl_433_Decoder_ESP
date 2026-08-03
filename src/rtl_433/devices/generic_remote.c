@@ -86,7 +86,7 @@ r_device const generic_remote = {
         .long_width  = 1404,
         .reset_limit = 1800,
         .sync_width  = 0,   // No sync bit used
-        .tolerance   = 200,
+        .tolerance   = 200, // us
         .decode_fn   = &generic_remote_callback,
         .fields      = output_fields,
 };

@@ -8,7 +8,7 @@ import os
 # leveraging the difficult work done by rtl_433_ESP
 # this script automates copy from a populated rtl_433 directory... it doesn't do any error checking
 # always review the results
-copy_exact="""include/c_util.h include/abuf.h include/bitbuffer.h 
+copy_exact="""include/c_util.h include/abuf.h include/bitbuffer.h include/compat_time.h 
 include/decoder.h include/decoder_util.h include/fatal.h include/list.h include/logger.h 
 include/optparse.h include/output_log.h include/pulse_detect.h include/pulse_slicer.h 
 include/r_api.h include/r_device.h include/r_util.h include/rfraw.h
@@ -19,14 +19,13 @@ src/devices/*.c
 """.split()
 
 # These probably can be fixed to work if need be with a little work...
-exclude_list=set("""blueline deltadore_x3d flex_decoder rosstech_dcu706 secplus_v2""".split())
+exclude_list=set("""blueline deltadore_x3d rosstech_dcu706 secplus_v2""".split())
 
 # forked: manually review for updates
 #src/r_api.c
 #include/pulse_data.h
 #include/r_private.h
 #include/rtl_433.h
-#include/compat_time.h
 
 # todo - snapshot rtl_433 git repo version
 

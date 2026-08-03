@@ -168,22 +168,8 @@ static int interlogix_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     case 0x4: device_type = "motion"; break;
     case 0x6: device_type = "heat"; break;
     case 0x9: device_type = "glass"; break; // switch1 changes from open to closed on trigger
-    case 0xd: device_type = "glass"; break; // newer Shatterpro
-    case 0xe: device_type = "freeze"; break;
-    case 0x2: device_type = "smoke"; break;
-    case 0x3: device_type = "panic"; break;
 
     default: device_type = "unknown"; break;
-    }
-
-    // The 2-bit parity check above is inherently weak (~1/4 of random/corrupt
-    // payloads pass); the device type is a fixed enum documented in the patent
-    // (see file header), so a value outside that enum is implausible and is
-    // rejected here as an additional, independent filter for the noise that
-    // parity lets through.
-    if (!strcmp(device_type, "unknown")) {
-        decoder_logf(decoder, 2, __func__, "implausible device type: %s", device_type_id);
-        return DECODE_FAIL_SANITY;
     }
 
     char device_serial[7];

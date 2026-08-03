@@ -15,8 +15,6 @@
 /**
 RainPoint HCS012ARF Rain Gauge sensor.
 
-Bluetooth model number is ...ARF and WiFi model number is ...FRF.
-
 Manufacturer:
 - Fujian Baldr Technology Co., Ltd
 
