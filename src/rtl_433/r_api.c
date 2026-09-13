@@ -64,7 +64,8 @@ r_cfg_t* r_create_cfg(void) {
 
 /* device decoder protocols */
 
-void register_protocol(r_cfg_t* cfg, r_device* r_dev, char* arg) {
+void register_protocol(r_cfg_t *cfg, r_device const *r_dev, char *arg)
+{
   // use arg of 'v', 'vv', 'vvv' as device verbosity
   int dev_verbose = 0;
   if (arg && *arg == 'v') {
@@ -153,7 +154,10 @@ int run_ook_demods(list_t* r_devs, pulse_data_t* pulse_data) {
         case OOK_PULSE_NRZS:
           p_events += pulse_slicer_nrzs(pulse_data, r_dev);
           break;
-        // FSK decoders
+        case OOK_PULSE_RZI:
+            p_events += pulse_slicer_rzi(pulse_data, r_dev);
+            break;
+          // FSK decoders
         case FSK_PULSE_PCM:
         case FSK_PULSE_PWM:
         case FSK_PULSE_MANCHESTER_ZEROBIT:
@@ -198,6 +202,7 @@ int run_fsk_demods(list_t* r_devs, pulse_data_t* fsk_pulse_data) {
         case OOK_PULSE_DMC:
         case OOK_PULSE_PWM_OSV1:
         case OOK_PULSE_NRZS:
+        case OOK_PULSE_RZI:
           break;
         case FSK_PULSE_PCM:
           p_events += pulse_slicer_pcm(fsk_pulse_data, r_dev);
@@ -366,6 +371,16 @@ void data_acquired_handler(r_device* r_dev, data_t* data) {
         char* new_format_label = str_replace(d->format, "km/h", "mi/h");
         free(d->format);
         d->format = new_format_label;
+      }
+      // Convert double type fields ending in _m_s to _mi_h
+      else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_m_s")) {
+          d->value.v_dbl = mps2mph(d->value.v_dbl);
+          char *new_label = str_replace(d->key, "_m_s", "_mi_h");
+          free(d->key);
+          d->key = new_label;
+          char *new_format_label = str_replace(d->format, "m/s", "mi/h");
+          free(d->format);
+          d->format = new_format_label;
       }
       // Convert double type fields ending in _mm to _inch
       else if ((d->type == DATA_DOUBLE) && str_endswith(d->key, "_mm")) {
