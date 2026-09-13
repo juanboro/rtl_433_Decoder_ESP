@@ -73,7 +73,7 @@ Decode example:
 static int tpms_eezrv_decode(r_device *decoder, bitbuffer_t *bitbuffer)
 {
     // preamble is ffff
-    uint8_t const preamble_pattern[] = {0xff, 0xff};
+    uint8_t const preamble_pattern[] = {0xff, 0xff}; // full 16-bit preamble
 
     if (bitbuffer->num_rows != 1) {
         return DECODE_ABORT_EARLY;
@@ -85,7 +85,13 @@ static int tpms_eezrv_decode(r_device *decoder, bitbuffer_t *bitbuffer)
         decoder_log(decoder, 3, __func__, "Preamble not found");
         return DECODE_ABORT_EARLY;
     }
-    if (pos + 8 * 8 > bitbuffer->bits_per_row[0]) {
+    // The preamble must start at 0, we ca not anchor it to the data
+    if (pos > 0) {
+        decoder_log(decoder, 1, __func__, "Likely false positive");
+        return DECODE_ABORT_EARLY;
+    }
+    // Check for 2 bytes preamble + 1 byte chk + 7 byte data
+    if (pos + 10 * 8 > bitbuffer->bits_per_row[0]) {
         decoder_log(decoder, 2, __func__, "Length check fail");
         return DECODE_ABORT_LENGTH;
     }
